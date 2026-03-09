@@ -1,0 +1,7 @@
+transformers
+torch
+datasets
+spacy
+streamlit
+pypdf2
+sentencepiece
