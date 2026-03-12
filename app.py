@@ -3,6 +3,7 @@ import streamlit as st
 from summarizer import summarize
 from classifier import classify_document
 from extractor import extract_entities
+import pdfplumber
 
 st.set_page_config(page_title="Makise", layout="wide", page_icon="▪")
 
@@ -365,17 +366,40 @@ st.markdown('<div class="input-bar-wrap">', unsafe_allow_html=True)
 # ── Radio Button ─────────────────────────────────────────────────────────────────
 st.markdown('<div>', unsafe_allow_html=True)
 radio = st.radio(label="", options=["Short", "Medium", "Detailed"], horizontal=True)
-
 st.markdown('</div>', unsafe_allow_html=True)
+# ─────────────────────────────────────────────────────────────────────────────────
 col1, col2 = st.columns([6,1])
 with col1:
     text_input = st.text_area(" ", height=68, placeholder="Paste a document to analyze…")
+    file_upload = st.file_uploader(" ", type="pdf")
 with col2:
     run = st.button("Analyze →")
 st.markdown('</div>', unsafe_allow_html=True)
 
 if run:
-    if not text_input.strip():
+    if file_upload:
+        try:
+            with st.spinner("Running pipeline…"):
+                all_text = ""
+                with pdfplumber.open(file_upload) as pdf:
+                    for page in pdf.pages:
+                        text = page.extract_text()
+                        if text:
+                            all_text += text + "\\n"
+
+                classification = classify_document(all_text)
+                entities = extract_entities(all_text)
+                summary = summarize(all_text, radio)
+            st.session_state.history.append({
+                "text": all_text,
+                "classification": classification,
+                "entities": entities,
+                "summary": summary,
+            })
+            st.rerun()
+        except Exception as e:
+            st.toast(f"Pipeline error: {e}")
+    elif not text_input.strip():
         st.toast("Paste a document first.", icon="⚠️")
     else:
         try:
@@ -383,7 +407,6 @@ if run:
                 classification = classify_document(text_input)
                 entities = extract_entities(text_input)
                 summary = summarize(text_input, radio)
-
             st.session_state.history.append({
                 "text": text_input,
                 "classification": classification,

@@ -4,7 +4,8 @@ def classify_document(text):
 
     candidate_labels = ['Research Paper', 'Legal Documents', 'Academic Paper', 'Academic Report',
                         'Medical Report', 'Technical Documentation', 'News article',
-                        'Financial Paper', 'Coding', 'Programming', 'Data science paper']
+                        'Financial Paper', 'Programming', 'Data science paper', "Science Article",
+                        "Technology Article", "Blog Post"]
     result = classifier(text, candidate_labels)
     multiplier = 100
     result2 = [item * multiplier for item in result['scores']]
