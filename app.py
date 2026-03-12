@@ -30,6 +30,36 @@ header, footer { display: none !important; }
 [data-testid="stVerticalBlock"] { gap: 0 !important; }
 .block-container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem 8rem !important; }
 
+/* Radio Content */
+/* hide the circle */
+label[data-baseweb="radio"] > div:first-child { display: none; }
+
+label[data-baseweb="radio"] {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #e0e0e0;
+    padding: 8px 16px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    transition: all 0.15s ease;
+}
+
+label[data-baseweb="radio"] p { color: #0a0a0a !important; }
+
+label[data-baseweb="radio"]:has(input:checked) {
+    background-color: #f54e4e !important;
+    border-color: #f54e4e !important;
+}
+
+label[data-baseweb="radio"]:has(input:checked) p { color: #ffffff !important; }
+
+[data-testid="stRadio"] {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
 /* Sidebar content */
 .sidebar-logo {
     font-size: 1.2rem;
@@ -332,7 +362,12 @@ else:
 
 # ── Input bar ─────────────────────────────────────────────────────────────────
 st.markdown('<div class="input-bar-wrap">', unsafe_allow_html=True)
-col1, col2 = st.columns([6, 1])
+# ── Radio Button ─────────────────────────────────────────────────────────────────
+st.markdown('<div>', unsafe_allow_html=True)
+radio = st.radio(label="", options=["Short", "Medium", "Detailed"], horizontal=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+col1, col2 = st.columns([6,1])
 with col1:
     text_input = st.text_area(" ", height=68, placeholder="Paste a document to analyze…")
 with col2:
@@ -347,7 +382,7 @@ if run:
             with st.spinner("Running pipeline…"):
                 classification = classify_document(text_input)
                 entities = extract_entities(text_input)
-                summary = summarize(text_input)
+                summary = summarize(text_input, radio)
 
             st.session_state.history.append({
                 "text": text_input,
@@ -357,4 +392,4 @@ if run:
             })
             st.rerun()
         except Exception as e:
-            st.toast(f"Pipeline error: {e}", icon="✗")
+            st.toast(f"Pipeline error: {e}")
