@@ -4,6 +4,7 @@ from summarizer import summarize
 from classifier import classify_document
 from extractor import extract_entities
 import pdfplumber
+from exporter import export_summary
 
 st.set_page_config(page_title="Makise", layout="wide", page_icon="▪")
 
@@ -365,7 +366,14 @@ else:
 st.markdown('<div class="input-bar-wrap">', unsafe_allow_html=True)
 # ── Radio Button ─────────────────────────────────────────────────────────────────
 st.markdown('<div>', unsafe_allow_html=True)
+if st.session_state.history:
+    st.download_button(
+        label="Export Summary",
+        data=export_summary(st.session_state.history[-1]["summary"]),
+        file_name="summary.pdf"
+    )
 radio = st.radio(label="", options=["Short", "Medium", "Detailed"], horizontal=True)
+
 st.markdown('</div>', unsafe_allow_html=True)
 # ─────────────────────────────────────────────────────────────────────────────────
 col1, col2 = st.columns([6,1])
