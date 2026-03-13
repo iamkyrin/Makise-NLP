@@ -379,53 +379,56 @@ st.markdown('</div>', unsafe_allow_html=True)
 col1, col2 = st.columns([6,1])
 with col1:
     text_input = st.text_area(" ", height=68, placeholder="Paste a document to analyze…")
-    file_upload = st.file_uploader(" ", type=["pdf", "txt"])
+    file_upload = st.file_uploader(" ", type=["pdf", "txt"], accept_multiple_files=True)
 with col2:
     run = st.button("Analyze →")
 st.markdown('</div>', unsafe_allow_html=True)
 
 if run:
-    all_text = ""
+
     if file_upload:
-        if file_upload.name.endswith(".pdf"):
-            try:
-                with st.spinner("Running pipeline…"):
-                    with pdfplumber.open(file_upload) as pdf:
-                        for page in pdf.pages:
-                            text = page.extract_text()
-                            if text:
-                                all_text += text + "\\n"
+        for file in file_upload:
+            all_text = ""
+            if file.name.endswith(".pdf"):
+                try:
+                    with st.spinner("Running pipeline…"):
+                        with pdfplumber.open(file) as pdf:
+                            for page in pdf.pages:
+                                text = page.extract_text()
+                                if text:
+                                    all_text += text + "\\n"
 
-                    classification = classify_document(all_text)
-                    entities = extract_entities(all_text)
-                    summary = summarize(all_text, radio)
-                st.session_state.history.append({
-                    "text": all_text,
-                    "classification": classification,
-                    "entities": entities,
-                    "summary": summary,
-                })
-                st.rerun()
-            except Exception as e:
-                st.toast(f"Pipeline error: {e}")
-        elif file_upload.name.endswith(".txt"):
-            try:
-                with st.spinner("Running pipeline…"):
-                    text = file_upload.read().decode("utf-8")
-                    all_text += text + "\\n"
+                        classification = classify_document(all_text)
+                        entities = extract_entities(all_text)
+                        summary = summarize(all_text, radio)
+                    st.session_state.history.append({
+                        "text": all_text,
+                        "classification": classification,
+                        "entities": entities,
+                        "summary": summary,
+                    })
 
-                    classification = classify_document(all_text)
-                    entities = extract_entities(all_text)
-                    summary = summarize(all_text, radio)
-                st.session_state.history.append({
-                    "text": all_text,
-                    "classification": classification,
-                    "entities": entities,
-                    "summary": summary,
-                })
-                st.rerun()
-            except Exception as e:
-                st.toast(f"Pipeline error: {e}")
+                except Exception as e:
+                    st.toast(f"Pipeline error: {e}")
+
+            elif file.name.endswith(".txt"):
+                try:
+                    with st.spinner("Running pipeline…"):
+                        text = file.read().decode("utf-8")
+                        all_text += text + "\\n"
+
+                        classification = classify_document(all_text)
+                        entities = extract_entities(all_text)
+                        summary = summarize(all_text, radio)
+                    st.session_state.history.append({
+                        "text": all_text,
+                        "classification": classification,
+                        "entities": entities,
+                        "summary": summary,
+                    })
+                except Exception as e:
+                    st.toast(f"Pipeline error: {e}")
+        st.rerun()
     elif not text_input.strip():
         st.toast("Paste a document first.", icon="⚠️")
     else:
