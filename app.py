@@ -7,6 +7,8 @@ import pdfplumber
 from exporter import export_summary
 
 st.set_page_config(page_title="Makise", layout="wide", page_icon="▪")
+if "history" not in st.session_state:
+    st.session_state.history = []
 
 st.markdown("""
 <style>
@@ -28,7 +30,8 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
 [data-testid="stSidebar"] * { color: #ffffff !important; }
 [data-testid="stSidebarContent"] { padding: 2rem 1.5rem !important; }
 
-header, footer { display: none !important; }
+footer { display: none !important; }
+[data-testid="stHeader"] { background: transparent !important; border: none !important; }
 [data-testid="stVerticalBlock"] { gap: 0 !important; }
 .block-container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem 8rem !important; }
 
@@ -63,52 +66,42 @@ label[data-baseweb="radio"]:has(input:checked) p { color: #ffffff !important; }
     margin-bottom: 10px;
 }
 /* Sidebar content */
-.sidebar-logo {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #ffffff;
-    letter-spacing: -0.5px;
-    margin-bottom: 0.25rem;
-}
-.sidebar-tagline {
-    font-size: 0.75rem;
-    color: #555555 !important;
-    font-weight: 300;
-    margin-bottom: 2.5rem;
-}
-.sidebar-section {
-    font-size: 0.65rem;
-    font-weight: 500;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: #444444 !important;
-    margin-bottom: 0.75rem;
-}
-.sidebar-item {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    font-size: 0.82rem;
-    font-weight: 400;
-    color: #cccccc !important;
-    margin-bottom: 0.25rem;
-    cursor: default;
-}
-.sidebar-item.active {
-    background: #1a1a1a;
-    color: #ffffff !important;
-}
-.sidebar-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: #333333;
-    flex-shrink: 0;
-}
+.sidebar-logo { font-size: 1.2rem; font-weight: 600; color: #ffffff; letter-spacing: -0.5px; margin-bottom: 0.25rem; }
+.sidebar-tagline { font-size: 0.75rem; color: #555555; font-weight: 300; margin-bottom: 2.5rem; }
+.sidebar-section { font-size: 0.65rem; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: #444444; margin-bottom: 0.75rem; }
+.sidebar-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.82rem; font-weight: 400; color: #cccccc; margin-bottom: 0.25rem; }
+.sidebar-item.active { background: #1a1a1a; color: #ffffff; }
+.sidebar-dot { width: 6px; height: 6px; border-radius: 50%; background: #333333; flex-shrink: 0; display: inline-block; }
 .sidebar-dot.green { background: #4ade80; }
 .sidebar-divider { height: 1px; background: #1a1a1a; margin: 1.5rem 0; }
 
+/* Sidebar Streamlit components */
+[data-testid="stSidebar"] label { color: #666666 !important; font-size: 0.65rem !important; font-weight: 500 !important; letter-spacing: 1.5px !important; text-transform: uppercase !important; margin-bottom: 0.5rem !important; }
+[data-testid="stSidebar"] p { color: #cccccc !important; font-size: 0.82rem !important; }
+
+/* Sidebar radio */
+[data-testid="stSidebar"] label[data-baseweb="radio"] > div:first-child { display: none !important; }
+[data-testid="stSidebar"] label[data-baseweb="radio"] { border: 1px solid #2a2a2a !important; border-radius: 8px !important; padding: 6px 12px !important; margin-bottom: 4px !important; cursor: pointer !important; }
+[data-testid="stSidebar"] label[data-baseweb="radio"] p { color: #aaaaaa !important; font-size: 0.78rem !important; letter-spacing: 0 !important; text-transform: none !important; }
+[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked) { background: #1a1a1a !important; border-color: #f54e4e !important; }
+[data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked) p { color: #ffffff !important; }
+
+/* Sidebar selectbox */
+[data-testid="stSidebar"] [data-testid="stSelectbox"] { margin-top: 0.5rem; }
+[data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div { background: #1a1a1a !important; border: 1px solid #2a2a2a !important; border-radius: 8px !important; color: #cccccc !important; }
+[data-testid="stSidebar"] [data-testid="stSelectbox"] svg { fill: #666666 !important; }
+
+/* Sidebar download button */
+[data-testid="stDownloadButton"] button {
+    background: #1a1a1a !important;
+    border: 1px solid #2a2a2a !important;
+    color: #cccccc !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    font-size: 0.78rem !important;
+    padding: 0.5rem 1rem !important; 
+}
+[data-testid="stDownloadButton"] button:hover { border-color: #f54e4e !important; color: #ffffff !important; }    
 /* Chat messages */
 .chat-wrap { display: flex; flex-direction: column; gap: 1.5rem; padding-bottom: 1rem; }
 
@@ -290,10 +283,17 @@ with st.sidebar:
     <div class="sidebar-item"><span class="sidebar-dot"></span> NER · spaCy</div>
     <div class="sidebar-item"><span class="sidebar-dot"></span> BART · CNN</div>
     <div class="sidebar-divider"></div>
-    <div class="sidebar-section">About</div>
-    <div class="sidebar-item"><span class="sidebar-dot"></span> NLP Pipeline v1.0</div>
+    <div class="sidebar-section">Settings</div>
     """, unsafe_allow_html=True)
 
+    radio = st.select_slider(label="Summary Length", options=["Short", "Medium", "Detailed"])
+    select_box = st.selectbox(label="Language", options=["English", "French", "Spanish"])
+
+    st.markdown("""
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">About</div>
+    <div class="sidebar-item"><span class="sidebar-dot"></span> NLP Pipeline v1.2.0-alpha</div>
+    """, unsafe_allow_html=True)
 # ── Init session state ────────────────────────────────────────────────────────
 if "history" not in st.session_state:
     st.session_state.history = []
@@ -360,22 +360,18 @@ else:
             </div>
         </div>
         """, unsafe_allow_html=True)
+        st.markdown("<div style='height: 50px'></div>", unsafe_allow_html=True)  # spacer
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ── Input bar ─────────────────────────────────────────────────────────────────
-st.markdown('<div class="input-bar-wrap">', unsafe_allow_html=True)
-# ── Radio Button ─────────────────────────────────────────────────────────────────
-st.markdown('<div>', unsafe_allow_html=True)
-if st.session_state.history:
+if st.session_state.history and "summary" in st.session_state.history[-1]:
     st.download_button(
         label="Export Summary",
         data=export_summary(st.session_state.history[-1]["summary"]),
         file_name="summary.pdf"
     )
-radio = st.radio(label="", options=["Short", "Medium", "Detailed"], horizontal=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
-# ─────────────────────────────────────────────────────────────────────────────────
+    st.markdown("<div style='height: 50px'></div>", unsafe_allow_html=True)
+st.markdown('<div style="height: 120px" class="input-bar-wrap">', unsafe_allow_html=True)
 col1, col2 = st.columns([6,1])
 with col1:
     text_input = st.text_area(" ", height=68, placeholder="Paste a document to analyze…")
@@ -385,64 +381,66 @@ with col2:
 st.markdown('</div>', unsafe_allow_html=True)
 
 if run:
-
-    if file_upload:
-        for file in file_upload:
-            all_text = ""
-            if file.name.endswith(".pdf"):
-                try:
-                    with st.spinner("Running pipeline…"):
-                        with pdfplumber.open(file) as pdf:
-                            for page in pdf.pages:
-                                text = page.extract_text()
-                                if text:
-                                    all_text += text + "\\n"
-
-                        classification = classify_document(all_text)
-                        entities = extract_entities(all_text)
-                        summary = summarize(all_text, radio)
-                    st.session_state.history.append({
-                        "text": all_text,
-                        "classification": classification,
-                        "entities": entities,
-                        "summary": summary,
-                    })
-
-                except Exception as e:
-                    st.toast(f"Pipeline error: {e}")
-
-            elif file.name.endswith(".txt"):
-                try:
-                    with st.spinner("Running pipeline…"):
-                        text = file.read().decode("utf-8")
-                        all_text += text + "\\n"
-
-                        classification = classify_document(all_text)
-                        entities = extract_entities(all_text)
-                        summary = summarize(all_text, radio)
-                    st.session_state.history.append({
-                        "text": all_text,
-                        "classification": classification,
-                        "entities": entities,
-                        "summary": summary,
-                    })
-                except Exception as e:
-                    st.toast(f"Pipeline error: {e}")
-        st.rerun()
-    elif not text_input.strip():
-        st.toast("Paste a document first.", icon="⚠️")
+    if select_box != "English":
+        st.toast("Multi-language support coming soon...")
     else:
-        try:
-            with st.spinner("Running pipeline…"):
-                classification = classify_document(text_input)
-                entities = extract_entities(text_input)
-                summary = summarize(text_input, radio)
-            st.session_state.history.append({
-                "text": text_input,
-                "classification": classification,
-                "entities": entities,
-                "summary": summary,
-            })
+        if file_upload:
+            for file in file_upload:
+                all_text = ""
+                if file.name.endswith(".pdf"):
+                    try:
+                        with st.spinner("Running pipeline…"):
+                            with pdfplumber.open(file) as pdf:
+                                for page in pdf.pages:
+                                    text = page.extract_text()
+                                    if text:
+                                        all_text += text + "\\n"
+
+                            classification = classify_document(all_text)
+                            entities = extract_entities(all_text)
+                            summary = summarize(all_text, radio)
+                        st.session_state.history.append({
+                            "text": all_text,
+                            "classification": classification,
+                            "entities": entities,
+                            "summary": summary,
+                        })
+
+                    except Exception as e:
+                        st.toast(f"Pipeline error: {e}")
+
+                elif file.name.endswith(".txt"):
+                    try:
+                        with st.spinner("Running pipeline…"):
+                            text = file.read().decode("utf-8")
+                            all_text += text + "\\n"
+
+                            classification = classify_document(all_text)
+                            entities = extract_entities(all_text)
+                            summary = summarize(all_text, radio)
+                        st.session_state.history.append({
+                            "text": all_text,
+                            "classification": classification,
+                            "entities": entities,
+                            "summary": summary,
+                        })
+                    except Exception as e:
+                        st.toast(f"Pipeline error: {e}")
             st.rerun()
-        except Exception as e:
-            st.toast(f"Pipeline error: {e}")
+        elif not text_input.strip():
+            st.toast("Paste a document first.", icon="⚠️")
+        else:
+            try:
+                with st.spinner("Running pipeline…"):
+                    classification = classify_document(text_input)
+                    entities = extract_entities(text_input)
+                    summary = summarize(text_input, radio)
+                st.session_state.history.append({
+                    "text": text_input,
+                    "classification": classification,
+                    "entities": entities,
+                    "summary": summary,
+                })
+                st.rerun()
+            except Exception as e:
+                st.toast(f"Pipeline error: {e}")
