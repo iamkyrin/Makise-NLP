@@ -15,10 +15,10 @@ def load_nlp():
             "-m",
             "spacy",
             "download",
-            model_name
+            model_name,
+            "--user"
         ], check=True)
         return spacy.load(model_name)
-
 
 nlp = load_nlp()
 def extract_entities(text):
