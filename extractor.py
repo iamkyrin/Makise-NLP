@@ -1,6 +1,26 @@
 import spacy
+import subprocess
+import sys
+import os
 
-nlp = spacy.load("en_core_web_sm")
+def load_nlp():
+    model_name = "en_core_web_sm"
+
+    try:
+        return spacy.load(model_name)
+    except OSError:
+        print(f"Downloading {model_name}...")
+        subprocess.run([
+            sys.executable,
+            "-m",
+            "spacy",
+            "download",
+            model_name
+        ], check=True)
+        return spacy.load(model_name)
+
+
+nlp = load_nlp()
 def extract_entities(text):
     docList = {}
     count = {}
