@@ -7,17 +7,12 @@ def load_nlp():
     model_name = "en_core_web_sm"
 
     try:
+        # Try to load the model
         return spacy.load(model_name)
     except OSError:
+        # Download the model using spaCy's built-in method
         print(f"Downloading {model_name}...")
-        subprocess.run([
-            sys.executable,
-            "-m",
-            "spacy",
-            "download",
-            model_name,
-            "--user"
-        ], check=True)
+        spacy.cli.download(model_name)
         return spacy.load(model_name)
 
 nlp = load_nlp()
